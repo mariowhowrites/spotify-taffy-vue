@@ -1,7 +1,13 @@
-async function searchForTrack(track, axios) {
-  const response = await axios.get(`search?q=${track}&type=track&limit=1`);
+import { chunk } from 'lodash';
 
-  return response;
+async function searchForTrack(track, axios) {
+  const { data } = await axios.get(`search?q=${track}&type=track&limit=1`);
+
+  if (data) {
+    return data.tracks.items[0];
+  }
+
+  return false;
 }
 
 export async function getSpotifyUserId(axios) {
@@ -25,25 +31,25 @@ export async function createPlaylist(username, title, axios) {
 }
 
 export async function getTrackURIsFromText(textToConvert, axios) {
-  const parsedTracks = textToConvert.replace(/\r\n/, '\n').split('\n');
+  const encodedQueries = textToConvert.replace(/\r\n/, '\n').split('\n').flatMap(encodeURIComponent);
 
-  const searchedTracks = parsedTracks.map(async (track) => {
-    const searchQuery = encodeURIComponent(track);
+  const searchedTracks = [];
 
-    const { data } = await searchForTrack(searchQuery, axios);
+  // eslint-disable-next-line
+  for (const query of encodedQueries) {
+    // eslint-disable-next-line
+    const result = await searchForTrack(query, axios);
 
-    return data.tracks.items ? data.tracks.items[0] : null;
-  });
+    if (result) {
+      searchedTracks.push(result);
+    }
+  }
 
-  const results = await Promise.all(searchedTracks);
-
-  return results.map(result => result.uri);
+  return searchedTracks.map(result => result.uri);
 }
 
 export async function addTracksToPlaylist(trackURIs, playlistId, axios) {
-  const data = {
-    uris: trackURIs,
-  };
+  const uriChunks = chunk(trackURIs, 100);
 
   const config = {
     headers: {
@@ -51,5 +57,11 @@ export async function addTracksToPlaylist(trackURIs, playlistId, axios) {
     },
   };
 
-  return axios.post(`playlists/${playlistId}/tracks`, data, config);
+  return Promise.all(uriChunks.map(async (uriChunk) => {
+    const data = {
+      uris: uriChunk,
+    };
+
+    return axios.post(`playlists/${playlistId}/tracks`, data, config);
+  }));
 }
