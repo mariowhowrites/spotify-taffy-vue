@@ -23,10 +23,7 @@
 </template>
 
 <script>
-import axios from 'axios';
-import {
-  getSpotifyUserId, createPlaylist, getTrackURIsFromText, addTracksToPlaylist,
-} from '../utils';
+import Spotify from '../spotify-client';
 
 export default {
   props: ['accessToken'],
@@ -35,26 +32,25 @@ export default {
     return {
       textToConvert: '',
       playlistTitle: 'Playlist Title',
+      client: {},
     };
   },
 
-  updated() {
-    axios.defaults.baseURL = 'https://api.spotify.com/v1';
-
-    axios.defaults.headers.common = {
-      Authorization: `Bearer ${this.accessToken}`,
-    };
+  watch: {
+    accessToken(newToken) {
+      this.client = Spotify.Client(newToken);
+    },
   },
 
   methods: {
     async convertTextToPlaylist() {
-      const userId = await getSpotifyUserId(axios);
+      const userId = await this.client.getSpotifyUserId();
 
-      const playlistId = await createPlaylist(userId, this.playlistTitle, axios);
+      const playlistId = await this.client.createPlaylist(userId, this.playlistTitle);
 
-      const trackURIs = await getTrackURIsFromText(this.textToConvert, axios);
+      const trackURIs = await this.client.getTrackURIsFromText(this.textToConvert);
 
-      await addTracksToPlaylist(trackURIs, playlistId, axios);
+      await this.client.addTracksToPlaylist(trackURIs, playlistId);
 
       window.alert('done!');
     },
