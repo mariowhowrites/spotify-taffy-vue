@@ -37,19 +37,23 @@ export async function getTrackURIsFromText(textToConvert, axios) {
 
   // eslint-disable-next-line
   for (const query of encodedQueries) {
-    // eslint-disable-next-line
-    const result = await searchForTrack(query, axios);
+    let result;
+
+    if (query.length > 0) {
+      // eslint-disable-next-line
+      result = await searchForTrack(query, axios);
+    }
 
     if (result) {
-      searchedTracks.push(result);
+      searchedTracks.push(result.uri);
     }
   }
 
-  return searchedTracks.map(result => result.uri);
+  return searchedTracks.filter((value, index, self) => self.indexOf(value) === index);
 }
 
 export async function addTracksToPlaylist(trackURIs, playlistId, axios) {
-  const uriChunks = chunk(trackURIs, 100);
+  const uriChunks = chunk(trackURIs, 100); // 100 = max tracks per endpoint request
 
   const config = {
     headers: {
