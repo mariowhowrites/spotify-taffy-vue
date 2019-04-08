@@ -52,6 +52,7 @@ export default {
 
       await this.client.addTracksToPlaylist(trackURIs, playlistId);
 
+      // eslint-disable-next-line
       window.alert('done!');
     },
   },

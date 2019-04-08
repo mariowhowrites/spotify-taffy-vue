@@ -23,7 +23,8 @@ export default {
       authLink:
         'https://accounts.spotify.com/authorize?'
         + 'client_id=b4e7382becec48aabd131f0704fd575b'
-        + '&redirect_uri=http:%2F%2Flocalhost:8080'
+        + `&redirect_uri=${encodeURIComponent(window.location.origin)}`
+        // + `&redirect_uri=http:%2F%2Flocalhost:8080`
         + '&scope=user-read-private playlist-read-private'
         + '&response_type=token'
         + '&state=123',
